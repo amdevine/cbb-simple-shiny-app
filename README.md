@@ -64,5 +64,16 @@ Customize your Shiny app with your own data and visualizations
 
 Dataset: https://opendata.maryland.gov/Energy-and-Environment/Chesapeake-Bay-Pollution-Loads-Nitrogen/rsrj-4w3t
 
+Delete comments at the top on lines 1-8.
+
+Import `dplyr` and `ggplot2`.
+
+~~~
+library(dplyr)
+library(ggplot2)
+~~~
+
+
+
 
 
