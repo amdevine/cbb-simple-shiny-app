@@ -1,0 +1,10 @@
+name: chesapeake-bay
+title:
+username:
+account: si-carpentries-brown-bag
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1533629
+bundleId: 2622385
+url: https://si-carpentries-brown-bag.shinyapps.io/chesapeake-bay/
+when: 1574875110.86596
