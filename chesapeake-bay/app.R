@@ -47,7 +47,8 @@ server <- function(input, output) {
           select(!!as.name(input$groupvar), Total_N_lb) %>%
           group_by(!!as.name(input$groupvar)) %>%
           summarise(total_nitrogen = sum(Total_N_lb, na.rm = TRUE)) %>%
-          ungroup()
+          ungroup() %>%
+          arrange(desc(total_nitrogen))
       
       print(input$groupvar)
       print(head(ndata_grouped))
