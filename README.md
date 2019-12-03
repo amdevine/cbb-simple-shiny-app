@@ -50,7 +50,7 @@ The **Directory name** you enter will end up being incorporated into the URL of 
 Once your project has been created, create a new R Script file (File > New File > R Script) and save it with the name `app.R`. This file will contain all the code for our application.
 
 Configure shinyapps.io
-----------------------------
+--------------------------
 
 shinyapps.io (https://www.shinyapps.io/) is a website produced by RStudio that provides free hosting for Shiny applications.
 
@@ -82,19 +82,141 @@ If you need to find this authorization information again in the future, it can b
 
 Ignore *Step 3 - Deploy* for now. We'll deploy once we create our app!
 
-Customize your Shiny app with your own data and visualizations
-------------------------------------------------------------------
+Create Shiny application
+----------------------------
 
-Dataset: https://opendata.maryland.gov/Energy-and-Environment/Chesapeake-Bay-Pollution-Loads-Nitrogen/rsrj-4w3t
+We will now write the code for our application in the `app.R` file we previously created. As we go through this demo, continue to add code to this file.
 
-Delete comments at the top on lines 1-8.
+### Import required packages
 
-Import `dplyr` and `ggplot2`.
+Our first step will be to import the packages we need for our application. 
 
 ~~~
-library(dplyr)
-library(ggplot2)
+library(shiny)
+library(tidyverse)
+library(scales)
 ~~~
+
+`shiny` is used to turn our R code into HTML+CSS to encode a website. `tidyverse` provides several packages for data manipulation, as well as ggplot for plotting. `scales` provides additional tools for formatting ggplot figures.
+
+### Download data file
+
+The dataset we are using for this application is a dataset showing the amount of nitrogen added to the Chesapeake Bay over a ~10 year timespan. Pollution sources are identified by county, basin, and the pollution source (e.g. agricultural, septic, wastewater). Details about this data source can be found here: https://opendata.maryland.gov/Energy-and-Environment/Chesapeake-Bay-Pollution-Loads-Nitrogen/rsrj-4w3t
+
+We will next add code that downloads the data as a CSV file, if it does not already exist.
+
+~~~
+if(!file.exists("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv")) {
+    download.file("https://opendata.maryland.gov/api/views/rsrj-4w3t/rows.csv?accessType=DOWNLOAD", 
+                  destfile = "Chesapeake_Bay_Pollution_Loads_Nitrogen.csv")
+}
+~~~
+
+`file.exists()` checks whether the file exists or not. `download.file` downloads the file from the specified url and saves it as `Chesapeake_Bay_Pollution_Loads_Nitrogen.csv`.
+
+### Import and clean data
+
+Next, we will import the data from the CSV file into R. 
+
+~~~
+ndata <- read_csv("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv")
+~~~
+
+Note, this is the `dplyr::read_csv()` function, NOT the built-in `read.csv()` function. 
+
+If you look at the CSV file, you will see that the data are currently stored in a "wide" format that does not adhere to the principles of [tidy data](https://vita.had.co.nz/papers/tidy-data.pdf). The current format makes it hard for us to calculate totals by different factors like county, pollution source, or year. We will use the `gather()` function to reshape our data, moving the results columns associated with each year into a new column, `Year`, and extracting the date.
+
+~~~
+ndata <- read_csv("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv") %>%
+    gather(key = 'Year', value = 'Total_N_lb', -(`Land-River Segment`:`Source Sector`)) %>%
+    mutate(Year = str_extract(Year, "\\d{4}"))
+~~~
+
+`str_extract()` uses regular expressions to extract sequences of characters from strings. We are using it here to retrieve four digit segments and set those as the Years. Don't forget to add the `%>%` operator after each step!
+
+Finally, our reshaped data include some extraneous results. We have results for 1985, which is outside our time period of interest. We also have results for 2017 and 2025, which are target goals rather than actual measurements. We'll add a `filter()` clause to filter our data by year.
+
+~~~
+ndata <- read_csv("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv") %>%
+    gather(key = 'Year', value = 'Total_N_lb', -(`Land-River Segment`:`Source Sector`)) %>%
+    mutate(Year = str_extract(Year, "\\d{4}")) %>%
+    filter(Year >= 2007, Year <= 2016)
+~~~
+
+We have now installed all requisite packages, and our data are clean and tidy. Your `app.R` file should currently look like this:
+
+~~~
+library(shiny)
+library(tidyverse)
+library(scales)
+
+if(!file.exists("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv")) {
+    download.file("https://opendata.maryland.gov/api/views/rsrj-4w3t/rows.csv?accessType=DOWNLOAD", 
+                  destfile = "Chesapeake_Bay_Pollution_Loads_Nitrogen.csv")
+}
+
+ndata <- read_csv("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv") %>%
+    gather(key = 'Year', value = 'Total_N_lb', -(`Land-River Segment`:`Source Sector`)) %>%
+    mutate(Year = str_extract(Year, "\\d{4}")) %>%
+    filter(Year >= 2007, Year <= 2016)
+~~~
+
+### Create the application UI
+
+Shiny applications have two required components: a `ui` object that stores the structure of the application, and a `server` function that stores the logic of the application. These components talk back and forth to each other, creating an interactive application.
+
+The UI is created with a series of nested functions, each roughly corresponding to an HTML element. Our general structure will be a container for all our elements, a box for our title, a sidebar for our controls, and a main window showing our graph.
+
+For this demo, we will be creating a `fluidPage()`, which allows elements to move around when the window is resized.
+
+~~~
+ui <- fluidPage()
+~~~
+
+Next, we will add our `titlePanel`, containing the application title, nested inside our fluidPage.
+
+~~~
+ui <- fluidPage(
+	titlePanel("Chesapeake Bay Pollution Data (Nitrogen), 2007-2016")
+)
+~~~
+
+After that, we will add `sidebarLayout()`, a function that tells Shiny we would like a layout for our page that includes a sidebar and a main window.
+
+~~~
+ui <- fluidPage(
+	titlePanel("Chesapeake Bay Pollution Data (Nitrogen), 2007-2016"),
+	sidebarLayout()
+)
+~~~
+
+Don't forget commas! Multiple elements inside e.g. fluidPage need to be separated with commas.
+
+Now, we want to add the `sidebarPanel()` and `mainPanel()` elements to our layout. We can use the `width` argument in these panels to set the proportional width each one takes up. Widths need to sum to 12 for all panels. 
+
+~~~
+ui <- fluidPage(
+	titlePanel("Chesapeake Bay Pollution Data (Nitrogen), 2007-2016"),
+	sidebarLayout(
+		sidebarPanel(width = 3),
+		mainPanel(width = 9)
+	)
+)
+~~~
+
+Now that we've established the overall layout of our application, we can add content to our sidebar and main panels.
+
+#### sidebarPanel()
+
+We will add content to our sidebar by continuing to nest functions inside the `sidebarPanel()` function. Many of the functions Shiny contains are functions that create specific HTML elements. A detailed list can be found [here](https://shiny.rstudio.com/articles/tag-glossary.html).
+
+First, we will add some text to the sidebar, as a brief explanation of the application. 
+
+
+
+#### mainPanel()
+
+
 
 Reactivity: https://shiny.rstudio.com/articles/reactivity-overview.html
 
