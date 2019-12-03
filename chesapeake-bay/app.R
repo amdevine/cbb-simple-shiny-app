@@ -2,6 +2,9 @@ library(tidyverse)
 library(scales)
 library(shiny)
 
+# In the future, incorporate demographic data to normalize by population!
+# https://opendata.maryland.gov/Demographic/Choose-Maryland-Compare-Counties-Demographics/pa7d-u6hs
+
 # Download data if file does not already exist
 if(!file.exists("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv")) {
     download.file("https://opendata.maryland.gov/api/views/rsrj-4w3t/rows.csv?accessType=DOWNLOAD", 

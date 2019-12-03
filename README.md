@@ -1,7 +1,11 @@
 Creating a simple web application in R with Shiny
 =====================================================
 
-This repository contains instructions and code for creating a simple RStudio Shiny application. This material was presented at the Smithsonian Carpentries Brown Bag on December 5, 2019.
+This repository contains instructions and code for creating a simple RStudio Shiny application that shows sources of nitrogen pollution of the Chesapeake Bay.
+
+An instance of this application can be found here: https://si-carpentries-brown-bag.shinyapps.io/chesapeake-bay/
+
+This material was presented at the Smithsonian Carpentries Brown Bag on December 5, 2019.
 
 Terminology
 ---------------
@@ -10,12 +14,14 @@ Terminology
 
 **rsconnect** is an R package that deploys Shiny apps on shinyapps.io.
 
-**shinyapps.io** is a website that hosts the applications created by Shiny. Shiny apps can be hosted on shinyapps.io or elsewhere. 
+**shinyapps.io** is a website that hosts applications created with Shiny. Shiny apps can be hosted on shinyapps.io or elsewhere. Documentation for deploying an app on shinyapps.io can be found here: https://shiny.rstudio.com/articles/shinyapps.html
 
 Set up RStudio
 ------------------
 
 We will be working in RStudio for this demonstration. Shiny is developed by RStudio, and RStudio provides some nice tools to create Shiny apps easily.
+
+### Install required packages
 
 In the RStudio Console, install the `shiny` and `rsconnect` packages.
 
@@ -23,9 +29,25 @@ In the RStudio Console, install the `shiny` and `rsconnect` packages.
 install.packages(c("shiny", "rsconnect"))
 ~~~
 
-Next, create a new Shiny application. This can be done with **File -> New Project... -> New Directory -> Shiny Web Application**. Your Directory name will be included in the URL of your application, so choose your directory name wisely!
+We will be using rsconnect interactively in the Console, so import it with 
 
-Once the new application has been created, you will see a new file opened in your Source window called `app.R`. This file currently contains a demo Shiny application. In a bit, we will edit this file to create our own application.
+~~~
+library(rsconnect)
+~~~
+
+Additionally, we will be cleaning data and producing a graph using the `tidyverse` and `scales` packages. If you do not already have these, install them as well.
+
+~~~
+install.packages(c("tidyverse", "scales"))
+~~~
+
+### Set up project and `app.R` file
+
+Create a new project using File > New Project. Choose the option to create a New Directory, and for Project Type, choose **New Project**. (There is an option to create a new Shiny Web Application, which creates a default application. For this demonstration, we'll be creating our application from scratch instead.)
+
+The **Directory name** you enter will end up being incorporated into the URL of your app, so choose carefully!
+
+Once your project has been created, create a new R Script file (File > New File > R Script) and save it with the name `app.R`. This file will contain all the code for our application.
 
 Configure shinyapps.io
 ----------------------------
@@ -38,26 +60,27 @@ shinyapps.io (https://www.shinyapps.io/) is a website produced by RStudio that p
 
 You can sign up for a free Shiny account at https://www.shinyapps.io/admin/#/signup. 
 
-After supplying your email and password, Shinyapps will ask you to select an account name. This will be the URL subdomain people use to access your app, so choose wisely!
+After supplying your email and password, shinyapps will ask you to select an account name. This will be incorporated into the URL for your application, so choose wisely!
 
 ### Connect your Shiny application to shinyapps.io
 
-Once you have selected an account name, you will be taken to a new page containing *Getting Started* directions. 
+Once you have entered an account name, you will be taken to a new page containing *Getting Started* directions. 
 
 We already completed *Step 1 - Install rsconnect* in the *Set up RStudio* section above.
 
 *Step 2 - Authorize Account* provides code to connect your application to shinyapps.io. Use the *Copy to clipboard* button to copy and paste this text into your RStudio Console, then run this command.
 
-*Step 3 - Deploy* allows you to deploy a demo application to shinyapps.io. In your RStudio Console, run the following commands:
+It should look something like this:
 
 ~~~
-library(rsconnect)
-deployApp()
+rsconnect::setAccountInfo(name='<account name>',
+                          token='<alphanumeric string>',
+                          secret='<alphanumeric string>')
 ~~~
 
-Once this command finishes executing, you should be able to see your demo Shiny app available on shinyapps.io!
+If you need to find this authorization information again in the future, it can be found under Account >> Tokens. Click the *Show* button next to the existing token.
 
-e.g. https://si-carpentries-brown-bag.shinyapps.io/chesapeake-bay/
+Ignore *Step 3 - Deploy* for now. We'll deploy once we create our app!
 
 Customize your Shiny app with your own data and visualizations
 ------------------------------------------------------------------
@@ -73,6 +96,7 @@ library(dplyr)
 library(ggplot2)
 ~~~
 
+Reactivity: https://shiny.rstudio.com/articles/reactivity-overview.html
 
 
 
