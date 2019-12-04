@@ -264,10 +264,176 @@ In this example, the values returned are all column names from our dataset. We w
 
 #### mainPanel()
 
+The only element we are adding to the mainPanel is the output of our plot.
 
+~~~
+mainPanel(
+	width = 9,
+	plotOutput("nitrogen_plot", height = "800px")
+)
+~~~
 
-Reactivity: https://shiny.rstudio.com/articles/reactivity-overview.html
+We will create our plot `nitrogen_plot` in the next part of the demo!
 
+We're now done adding elements to our UI. Your `app.R` file should currently look like this:
 
+~~~
+library(shiny)
+library(tidyverse)
+library(scales)
 
+if(!file.exists("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv")) {
+    download.file("https://opendata.maryland.gov/api/views/rsrj-4w3t/rows.csv?accessType=DOWNLOAD", 
+                  destfile = "Chesapeake_Bay_Pollution_Loads_Nitrogen.csv")
+}
+
+ndata <- read_csv("Chesapeake_Bay_Pollution_Loads_Nitrogen.csv") %>%
+    gather(key = 'Year', value = 'Total_N_lb', -(`Land-River Segment`:`Source Sector`)) %>%
+    mutate(Year = str_extract(Year, "\\d{4}")) %>%
+    filter(Year >= 2007, Year <= 2016)
+
+ui <- fluidPage(
+    titlePanel("Chesapeake Bay Pollution Data (Nitrogen), 2007-2016"),
+    sidebarLayout(
+        
+        sidebarPanel(width = 3,
+             p("Data represent nitrogen pollution (pounds) from contributing sources in the Chesapeake Bay watershed from 2007 to 2016. More information can be found at the link below."),
+             a(href="https://opendata.maryland.gov/Energy-and-Environment/Chesapeake-Bay-Pollution-Loads-Nitrogen/rsrj-4w3t",
+               "Maryland Open Data Portal: Chesapeake Bay Pollution Loads - Nitrogen"),
+             hr(),
+        ),
+        mainPanel(
+            width = 9,
+            plotOutput("nitrogen_plot", height = "800px")
+        )
+    )
+)
+~~~
+
+### Create the application server logic
+
+The logic of the application is stored in a function named `server()`. When changes are made to the UI, the UI provides updated values to the server function. The server function outputs updated results to the UI, which are then displayed to the user.
+
+First, we will create the server function.
+
+~~~
+server <- function(input, output) {}
+~~~
+
+`input` contains values provided by the UI. `output` contains values that the server returns to the UI.
+
+Next, we will add a new object to the output, `nitrogen_plot`. This is the plot we referenced in the `mainPanel()` of our UI.
+
+~~~
+server <- function(input, output) {
+	output$nitrogen_plot <- renderPlot({})
+}
+~~~
+
+`renderPlot({})` is a Shiny function that passes a plot to the UI. Note the curly braces in the parentheses; these indicate that `renderPlot({})` is a **reactive function**. Reactive functions automatically re-run every time the user makes a change to the UI.
+
+(For more details on reactivity in Shiny: https://shiny.rstudio.com/articles/reactivity-overview.html)
+
+Every time the user clicks a different *Show totals by* option in the application, we want to change the graph to reflect that new grouping option. We will therefore put all the steps to change the graph inside our `renderPlot({})` function. These steps consist of summarizing the data, then producing the graph.
+
+#### Summarize the data
+
+To summarize the data, we want to select two columns: the variable of choice, and the total nitrogen produced. We will then group by the variable and find the sum of all nitrogen produced.
+
+~~~
+server <- function(input, output) {
+	output$nitrogen_plot <- renderPlot({
+		
+		ndata_grouped <- ndata %>% 
+			select(!!as.name(input$groupvar), Total_N_lb) %>%
+			group_by(!!as.name(input$groupvar)) %>%
+			summarise(total_nitrogen = sum(Total_N_lb, na.rm = TRUE))
+	
+	})
+}
+~~~
+
+`input$groupvar` allows you to get the value of `groupvar` that we created in the UI. The value returned is the column name of a variable in the downloaded data. All values from UI elements can be accessed by `input$elementname`.
+
+Normally, column names are supplied to dplyr directly; if we try to use `select(input$groupvar)`, dplyr will look for a column named "input$groupvar" and return an error. `!!` tells dplyr that we are going to provide R code rather than a column name, and `as.name()` tells R to treat the argument as the name of an object (rather than e.g. a string).
+
+#### Create the plot
+
+Now we will use our summarized data to produce our plot. We will start by creating the ggplot and supplying the data.
+
+~~~
+server <- function(input, output) {
+	output$nitrogen_plot <- renderPlot({
+		
+		ndata_grouped <- ndata %>% 
+			select(!!as.name(input$groupvar), Total_N_lb) %>%
+			group_by(!!as.name(input$groupvar)) %>%
+			summarise(total_nitrogen = sum(Total_N_lb, na.rm = TRUE))
+			
+		ggplot(ndata_grouped, aes(x = !!as.name(input$groupvar), y = total_nitrogen))
+	
+	})
+}
+~~~
+
+Again, we are using `!!as.name(input$groupvar)` to access the column name chosen by the user.
+
+Next, we will add a barplot geometry layer.
+
+~~~
+server <- function(input, output) {
+	output$nitrogen_plot <- renderPlot({
+		
+		ndata_grouped <- ndata %>% 
+			select(!!as.name(input$groupvar), Total_N_lb) %>%
+			group_by(!!as.name(input$groupvar)) %>%
+			summarise(total_nitrogen = sum(Total_N_lb, na.rm = TRUE))
+			
+		ggplot(ndata_grouped, aes(x = !!as.name(input$groupvar), y = total_nitrogen)) +
+			geom_col(fill = "darkslategray4")
+	
+	})
+}
+~~~
+
+Finally, we will add additional functions that change the orientation and text wrap of the x-axis labels, the label and units of the y-axis, the text size, and the legend.
+
+~~~
+server <- function(input, output) {
+	output$nitrogen_plot <- renderPlot({
+		
+		ndata_grouped <- ndata %>% 
+			select(!!as.name(input$groupvar), Total_N_lb) %>%
+			group_by(!!as.name(input$groupvar)) %>%
+			summarise(total_nitrogen = sum(Total_N_lb, na.rm = TRUE))
+			
+		ggplot(ndata_grouped, aes(x = !!as.name(input$groupvar), y = total_nitrogen)) +
+			geom_col(fill = "darkslategray4") +
+			scale_x_discrete(labels = wrap_format(15)) +
+			scale_y_continuous(name = "Total nitrogen (lbs)", 
+								  labels = unit_format(unit = "M", scale = 10e-7)) +
+			theme_minimal() +
+			theme(text = element_text(size = 20),
+				   axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+				   legend.position = "none")
+	})
+}
+~~~
+
+We are now done writing our server logic.
+
+### Run the application
+
+We have one last line to add to `app.R`: a function that actually runs the application! At the bottom of the file, add the following code:
+
+~~~
+shinyApps(ui = ui, server = server)
+~~~
+
+You can now test your application to make sure everything is working as expected. At the top of the script window, you should see a button to *Run App*. Click this, and a new window will open containing a local version of your application. Test out the grouping variable buttons to make sure that the graph is changing as expected!
+
+Once the application is running error-free, we can finally deploy it to the internet!
+
+Deploy application to shinyapps.io
+--------------------------------------
 
