@@ -210,9 +210,57 @@ Now that we've established the overall layout of our application, we can add con
 
 We will add content to our sidebar by continuing to nest functions inside the `sidebarPanel()` function. Many of the functions Shiny contains are functions that create specific HTML elements. A detailed list can be found [here](https://shiny.rstudio.com/articles/tag-glossary.html).
 
-First, we will add some text to the sidebar, as a brief explanation of the application. 
+First, we will add some explanatory text to the sidebar. 
 
+~~~
+ui <- fluidPage(
+	titlePanel("Chesapeake Bay Pollution Data (Nitrogen), 2007-2016"),
+	sidebarLayout(
+		
+		sidebarPanel(
+			width = 3,
+			p("Data represent nitrogen pollution (pounds) from contributing sources in the Chesapeake Bay watershed from 2007 to 2016. More information can be found at the link below."),
+			a(href="https://opendata.maryland.gov/Energy-and-Environment/Chesapeake-Bay-Pollution-Loads-Nitrogen/rsrj-4w3t",
+			  "Maryland Open Data Portal: Chesapeake Bay Pollution Loads - Nitrogen"),
+			hr(),
+		),
+		
+		mainPanel(width = 9)
+	)
+)
+~~~
 
+`p()` creates paragraphs, `a()` creates links, and `hr()` creates horizontal separators.
+
+Next, we will add a `radioButtons()` control panel. This panel will let us choose the variable we would like to use to display data on our graph.
+
+~~~
+ui <- fluidPage(
+	titlePanel("Chesapeake Bay Pollution Data (Nitrogen), 2007-2016"),
+	sidebarLayout(
+		
+		sidebarPanel(
+			width = 3,
+			p("Data represent nitrogen pollution (pounds) from contributing sources in the Chesapeake Bay watershed from 2007 to 2016. More information can be found at the link below."),
+			a(href="https://opendata.maryland.gov/Energy-and-Environment/Chesapeake-Bay-Pollution-Loads-Nitrogen/rsrj-4w3t",
+			  "Maryland Open Data Portal: Chesapeake Bay Pollution Loads - Nitrogen"),
+			hr(),
+			radioButtons("groupvar", "Show totals by",
+                       c("County" = "County",
+                         "Tributary basin" = "Tributary Basin",
+                         "Major basin" = "Major Basin",
+                         "Source type" = "Source Sector",
+                         "Year" = "Year"))
+		),
+		
+		mainPanel(width = 9)
+	)
+)
+~~~
+
+The first argument supplied to `radioButtons()` is the name of that element. In this example, we named it `groupvar`. We can use this name in our `server` logic later to obtain the value of the button selected. Next, we supply the title we would like to use for this panel, which is `"Show totals by"`. Finally, we supply a named vector of options. The name of each element is the name to display on the application (e.g. "Source type"), and the value is the value we would like to be supplied to the `server` function (e.g. "Source Sector"). 
+
+In this example, the values returned are all column names from our dataset. We will be using this box to select the column we would like to analyze from our data.
 
 #### mainPanel()
 

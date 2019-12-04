@@ -31,9 +31,7 @@ ui <- fluidPage(
       # Sidebar with text and display options
       sidebarPanel(
           width = 3,
-          p(paste("Data represent nitrogen pollution (pounds) from contributing sources",
-                  "in the Chesapeake Bay watershed from 2007 to 2016.", 
-                  "More information can be found at the link below.")),
+          p("Data represent nitrogen pollution (pounds) from contributing sources in the Chesapeake Bay watershed from 2007 to 2016. More information can be found at the link below."),
           a(href="https://opendata.maryland.gov/Energy-and-Environment/Chesapeake-Bay-Pollution-Loads-Nitrogen/rsrj-4w3t", 
             "Maryland Open Data Portal: Chesapeake Bay Pollution Loads - Nitrogen"),
           hr(),
