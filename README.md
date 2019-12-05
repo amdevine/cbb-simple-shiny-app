@@ -3,7 +3,7 @@ Creating a simple web application in R with Shiny
 
 This repository contains instructions and code for creating a simple RStudio Shiny application that shows sources of nitrogen pollution of the Chesapeake Bay.
 
-An instance of this application can be found here: https://si-carpentries-brown-bag.shinyapps.io/chesapeake-bay/
+An instance of this application can be found here: https://si-carpentries-shiny-demo.shinyapps.io/chesapeake-bay/
 
 This material was presented at the Smithsonian Carpentries Brown Bag on December 5, 2019.
 
@@ -437,3 +437,8 @@ Once the application is running error-free, we can finally deploy it to the inte
 Deploy application to shinyapps.io
 --------------------------------------
 
+COnsole:
+
+~~~
+deployApp()
+~~~
