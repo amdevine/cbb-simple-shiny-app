@@ -437,8 +437,18 @@ Once the application is running error-free, we can finally deploy it to the inte
 Deploy application to shinyapps.io
 --------------------------------------
 
-COnsole:
+Once your application is complete, you can deploy it to shinyapps.io.
+
+In the Console window:
 
 ~~~
+library(rsconnect)
 deployApp()
 ~~~
+
+The `deployApp()` function defaults to looking for the `app.R` file in the current working directory. If your `app.R` file is saved in a subdirectory, supply the path to that subdirectory as an argument to deployApp().
+
+The application should take several minutes to deploy. Once complete, a browser window will automatically open with the newly deployed applicatioin on shinyapps.io.
+
+If you make changes to the application code, you can use `deployApp()` again to update the application. When promped, enter `Y` to overwrite the existing app with the updated code.
+
